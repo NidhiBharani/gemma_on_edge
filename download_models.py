@@ -27,6 +27,12 @@ MODELS = {
         "format": "litertlm",
         "description": "Gemma 3n E2B - Multimodal (text+image+audio) in .litertlm format",
     },
+    "gemma3n-e2b-web": {
+        "repo_id": "google/gemma-3n-E2B-it-litert-lm",
+        "filename": "gemma-3n-E2B-it-int4-Web.litertlm",
+        "format": "litertlm",
+        "description": "Gemma 3n E2B WebGPU - Optimized .litertlm for web",
+    },
     "gemma3n-e4b-litertlm": {
         "repo_id": "google/gemma-3n-E4B-it-litert-lm",
         "filename": "gemma-3n-E4B-it-int4.litertlm",

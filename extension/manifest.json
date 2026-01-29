@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Gemma WebGPU MVP",
+  "version": "0.1.0",
+  "description": "Run Gemma 3n WebGPU inference offscreen with MediaPipe.",
+  "permissions": ["offscreen"],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "https://cdn.jsdelivr.net/*"
+  ],
+  "action": {
+    "default_title": "Gemma",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "service_worker.js",
+    "type": "module"
+  },
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://cdn.jsdelivr.net http://localhost:8000; worker-src 'self' blob:;"
+  }
+}

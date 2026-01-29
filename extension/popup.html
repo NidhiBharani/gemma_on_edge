@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gemma Prompt</title>
+    <style>
+      :root {
+        font-family: "Sofia Sans", "Trebuchet MS", system-ui, sans-serif;
+        color: #1b1f29;
+      }
+      body {
+        margin: 0;
+        min-width: 320px;
+        background: #f4f6f9;
+      }
+      .container {
+        padding: 16px;
+      }
+      h1 {
+        font-size: 1.2rem;
+        margin: 0 0 8px;
+      }
+      textarea {
+        width: 100%;
+        min-height: 90px;
+        border-radius: 10px;
+        border: 1px solid #cfd6e1;
+        padding: 10px;
+        font-size: 0.95rem;
+        resize: vertical;
+      }
+      button {
+        margin-top: 10px;
+        width: 100%;
+        border: none;
+        border-radius: 999px;
+        padding: 10px 12px;
+        background: #1b3a57;
+        color: white;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .status {
+        margin-top: 8px;
+        font-size: 0.85rem;
+        color: #606778;
+      }
+      pre {
+        margin-top: 10px;
+        background: #0f1622;
+        color: #e6eefc;
+        padding: 10px;
+        border-radius: 8px;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Gemma Prompt</h1>
+      <textarea id="prompt">Summarize today in one sentence.</textarea>
+      <button id="run">Run Inference</button>
+      <div class="status" id="status">Idle</div>
+      <pre id="output">Waiting for a prompt...</pre>
+    </div>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

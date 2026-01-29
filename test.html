@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gemma WebGPU Test</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Sofia Sans", "Trebuchet MS", system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top left, #f5f1e8, #e7edf4 55%, #eef6f2 100%);
+        color: #1a1b1f;
+      }
+      main {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 40px 24px 64px;
+      }
+      h1 {
+        font-size: 2.4rem;
+        margin-bottom: 0.4rem;
+      }
+      p {
+        margin-top: 0;
+        color: #4b4f58;
+      }
+      .card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 18px 40px rgba(27, 37, 48, 0.08);
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin: 16px 0 8px;
+      }
+      textarea {
+        width: 100%;
+        min-height: 120px;
+        border-radius: 12px;
+        border: 1px solid #d1d6df;
+        padding: 12px 14px;
+        font-size: 1rem;
+        resize: vertical;
+      }
+      button {
+        margin-top: 16px;
+        background: #1b3a57;
+        color: #fff;
+        border: none;
+        border-radius: 999px;
+        padding: 10px 18px;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      #status {
+        font-size: 0.95rem;
+        padding: 8px 12px;
+        background: #f1f4f8;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      #output {
+        margin-top: 16px;
+        padding: 16px;
+        border-radius: 12px;
+        background: #111723;
+        color: #e9f1ff;
+        min-height: 120px;
+        white-space: pre-wrap;
+      }
+      .hint {
+        font-size: 0.85rem;
+        color: #6a6f7a;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Gemma WebGPU Test</h1>
+      <p>Sanity check for MediaPipe GenAI + WebGPU before building the extension.</p>
+      <div class="card">
+        <div id="status">Initializing...</div>
+        <label for="prompt">Prompt</label>
+        <textarea id="prompt">Give me three ideas for a sci-fi short story.</textarea>
+        <div class="hint">Model served from <code>http://localhost:8000/models</code>.</div>
+        <button id="run">Run Inference</button>
+        <div id="output">Waiting for a prompt...</div>
+      </div>
+    </main>
+
+    <script type="module">
+      import { FilesetResolver, LlmInference } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@latest";
+
+      const MODEL_URL = "http://localhost:8000/models/gemma-3n-E2B-it-int4-Web.litertlm";
+      const WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@latest/wasm";
+
+      const statusEl = document.getElementById("status");
+      const runButton = document.getElementById("run");
+      const promptEl = document.getElementById("prompt");
+      const outputEl = document.getElementById("output");
+
+      let llmInference;
+
+      function setStatus(text) {
+        statusEl.textContent = text;
+      }
+
+      async function initModel() {
+        if (llmInference) return llmInference;
+        setStatus("Loading MediaPipe GenAI...");
+
+        const filesetResolver = await FilesetResolver.forGenAiTasks(WASM_URL);
+        llmInference = await LlmInference.createFromOptions(filesetResolver, {
+          baseOptions: {
+            modelAssetPath: MODEL_URL,
+          },
+          maxTokens: 512,
+          temperature: 0.8,
+          topK: 40,
+        });
+
+        setStatus("Model ready.");
+        return llmInference;
+      }
+
+      async function generate(prompt) {
+        if (typeof llmInference.generateResponse === "function") {
+          return await llmInference.generateResponse(prompt);
+        }
+        if (typeof llmInference.generate === "function") {
+          return await llmInference.generate(prompt);
+        }
+        throw new Error("No compatible generate method found on LlmInference.");
+      }
+
+      runButton.addEventListener("click", async () => {
+        runButton.disabled = true;
+        outputEl.textContent = "Running...";
+        try {
+          await initModel();
+          const response = await generate(promptEl.value.trim());
+          outputEl.textContent = typeof response === "string" ? response : JSON.stringify(response, null, 2);
+        } catch (err) {
+          outputEl.textContent = `Error: ${err.message ?? err}`;
+          setStatus("Error (see output)");
+        } finally {
+          runButton.disabled = false;
+        }
+      });
+
+      if (!navigator.gpu) {
+        setStatus("WebGPU unavailable in this browser.");
+      } else {
+        initModel().catch((err) => {
+          outputEl.textContent = `Error: ${err.message ?? err}`;
+          setStatus("Failed to initialize");
+        });
+      }
+    </script>
+  </body>
+</html>
