@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Gemma WebGPU Test</title>
+    <title>Gemma PII Redaction Test</title>
     <style>
       :root {
         color-scheme: light;
@@ -71,13 +71,11 @@
         gap: 8px;
       }
       #output {
-        margin-top: 16px;
-        padding: 16px;
-        border-radius: 12px;
+        margin-top: 8px;
+        min-height: 140px;
         background: #111723;
         color: #e9f1ff;
-        min-height: 120px;
-        white-space: pre-wrap;
+        border-color: #1f2b3d;
       }
       .hint {
         font-size: 0.85rem;
@@ -87,15 +85,16 @@
   </head>
   <body>
     <main>
-      <h1>Gemma WebGPU Test</h1>
-      <p>Sanity check for MediaPipe GenAI + WebGPU before building the extension.</p>
+      <h1>Gemma PII Redaction Test</h1>
+      <p>Use Gemma-3n WebGPU to replace PII with placeholders.</p>
       <div class="card">
         <div id="status">Initializing...</div>
-        <label for="prompt">Prompt</label>
-        <textarea id="prompt">Give me three ideas for a sci-fi short story.</textarea>
+        <label for="input">Input text</label>
+        <textarea id="input">Contact Jane Doe at jane.doe@example.com or (415) 555-0199. SSN 123-45-6789. Card 4111 1111 1111 1111.</textarea>
         <div class="hint">Model served from <code>http://localhost:8000/models</code>.</div>
-        <button id="run">Run Inference</button>
-        <div id="output">Waiting for a prompt...</div>
+        <button id="run">Remove PII</button>
+        <label for="output">Redacted output</label>
+        <textarea id="output" readonly>Waiting for input...</textarea>
       </div>
     </main>
 
@@ -107,13 +106,29 @@
 
       const statusEl = document.getElementById("status");
       const runButton = document.getElementById("run");
-      const promptEl = document.getElementById("prompt");
+      const inputEl = document.getElementById("input");
       const outputEl = document.getElementById("output");
 
       let llmInference;
 
       function setStatus(text) {
         statusEl.textContent = text;
+      }
+
+      const REDACTION_PROMPT = `You are a PII redaction system. Replace any PII in the input with the placeholders below and return only the redacted text.
+
+- Names -> [NAME]
+- Phones -> [PHONE]
+- Emails -> [EMAIL]
+- Addresses -> [ADDRESS]
+- SSN -> [SSN]
+- API keys -> [API_KEY]
+- Bank details -> [BANK_ACCOUNT]
+- Credit cards -> [CREDIT_CARD]
+- Access tokens -> [ACCESS_TOKEN]`;
+
+      function buildPrompt(text) {
+        return `${REDACTION_PROMPT}\n\nINPUT:\n${text}`;
       }
 
       async function initModel() {
@@ -146,13 +161,16 @@
 
       runButton.addEventListener("click", async () => {
         runButton.disabled = true;
-        outputEl.textContent = "Running...";
+        outputEl.value = "Running...";
         try {
           await initModel();
-          const response = await generate(promptEl.value.trim());
-          outputEl.textContent = typeof response === "string" ? response : JSON.stringify(response, null, 2);
+          const inputText = inputEl.value.trim();
+          const response = await generate(buildPrompt(inputText));
+          const redacted = typeof response === "string" ? response : JSON.stringify(response, null, 2);
+          outputEl.value = redacted;
+          inputEl.value = redacted;
         } catch (err) {
-          outputEl.textContent = `Error: ${err.message ?? err}`;
+          outputEl.value = `Error: ${err.message ?? err}`;
           setStatus("Error (see output)");
         } finally {
           runButton.disabled = false;
@@ -163,7 +181,7 @@
         setStatus("WebGPU unavailable in this browser.");
       } else {
         initModel().catch((err) => {
-          outputEl.textContent = `Error: ${err.message ?? err}`;
+          outputEl.value = `Error: ${err.message ?? err}`;
           setStatus("Failed to initialize");
         });
       }

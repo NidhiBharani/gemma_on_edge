@@ -5,6 +5,22 @@ const WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@latest/was
 
 let llmInferencePromise;
 
+const REDACTION_PROMPT = `You are a PII redaction system. Replace any PII in the input with the placeholders below and return only the redacted text.
+
+- Names -> [NAME]
+- Phones -> [PHONE]
+- Emails -> [EMAIL]
+- Addresses -> [ADDRESS]
+- SSN -> [SSN]
+- API keys -> [API_KEY]
+- Bank details -> [BANK_ACCOUNT]
+- Credit cards -> [CREDIT_CARD]
+- Access tokens -> [ACCESS_TOKEN]`;
+
+function buildPrompt(text) {
+  return `${REDACTION_PROMPT}\n\nINPUT:\n${text}`;
+}
+
 async function initModel() {
   if (!llmInferencePromise) {
     llmInferencePromise = (async () => {
@@ -40,7 +56,8 @@ chrome.runtime.onMessage.addListener((message) => {
 
   (async () => {
     try {
-      const result = await runInference(message.prompt);
+      const inputText = (message.prompt ?? "").trim();
+      const result = await runInference(buildPrompt(inputText));
       chrome.runtime.sendMessage({
         target: "service_worker",
         type: "LLM_RESULT",

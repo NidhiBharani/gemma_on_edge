@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Gemma Prompt</title>
+    <title>Gemma PII Redaction</title>
     <style>
       :root {
         font-family: "Sofia Sans", "Trebuchet MS", system-ui, sans-serif;
@@ -49,23 +49,22 @@
         font-size: 0.85rem;
         color: #606778;
       }
-      pre {
+      #output {
         margin-top: 10px;
+        min-height: 110px;
         background: #0f1622;
         color: #e6eefc;
-        padding: 10px;
-        border-radius: 8px;
-        white-space: pre-wrap;
+        border-color: #1f2b3d;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>Gemma Prompt</h1>
-      <textarea id="prompt">Summarize today in one sentence.</textarea>
-      <button id="run">Run Inference</button>
+      <h1>PII Redaction</h1>
+      <textarea id="input">Contact Jane Doe at jane.doe@example.com or (415) 555-0199.</textarea>
+      <button id="run">Remove PII</button>
       <div class="status" id="status">Idle</div>
-      <pre id="output">Waiting for a prompt...</pre>
+      <textarea id="output" readonly>Waiting for input...</textarea>
     </div>
     <script type="module" src="popup.js"></script>
   </body>
