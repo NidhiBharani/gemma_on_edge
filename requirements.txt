@@ -1,0 +1,4 @@
+# MediaPipe LLM Inference for Gemma on Edge
+mediapipe>=0.10.14
+huggingface_hub>=0.20.0
+tqdm>=4.66.0
