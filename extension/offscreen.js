@@ -1,7 +1,7 @@
-import { FilesetResolver, LlmInference } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@latest";
+import { FilesetResolver, LlmInference } from "./lib/genai_bundle.mjs";
 
 const MODEL_URL = "http://localhost:8000/models/gemma-3n-E2B-it-int4-Web.litertlm";
-const WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@latest/wasm";
+const WASM_URL = chrome.runtime.getURL("lib/wasm");
 
 let llmInferencePromise;
 
