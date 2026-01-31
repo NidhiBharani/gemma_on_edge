@@ -24,7 +24,6 @@ runButton.addEventListener("click", async () => {
       setStatus("Error");
     } else {
       outputEl.value = response?.result ?? "(no response)";
-      inputEl.value = response?.result ?? inputEl.value;
       setStatus("Done");
     }
   } catch (err) {

@@ -1,38 +1,28 @@
 import { FilesetResolver, LlmInference } from "./lib/genai_bundle.mjs";
+import { buildPrompt, normalizeOutput } from "./offscreen_utils.mjs";
 
 const MODEL_URL = "http://localhost:8000/models/gemma-3n-E2B-it-int4-Web.litertlm";
 const WASM_URL = chrome.runtime.getURL("lib/wasm");
 
 let llmInferencePromise;
-
-const REDACTION_PROMPT = `You are a PII redaction system. Replace any PII in the input with the placeholders below and return only the redacted text.
-
-- Names -> [NAME]
-- Phones -> [PHONE]
-- Emails -> [EMAIL]
-- Addresses -> [ADDRESS]
-- SSN -> [SSN]
-- API keys -> [API_KEY]
-- Bank details -> [BANK_ACCOUNT]
-- Credit cards -> [CREDIT_CARD]
-- Access tokens -> [ACCESS_TOKEN]`;
-
-function buildPrompt(text) {
-  return `${REDACTION_PROMPT}\n\nINPUT:\n${text}`;
-}
+let llmInferenceInstance;
+const RESET_MODEL_EACH_REQUEST = true;
 
 async function initModel() {
   if (!llmInferencePromise) {
     llmInferencePromise = (async () => {
       const filesetResolver = await FilesetResolver.forGenAiTasks(WASM_URL);
-      return await LlmInference.createFromOptions(filesetResolver, {
+      const instance = await LlmInference.createFromOptions(filesetResolver, {
         baseOptions: {
           modelAssetPath: MODEL_URL
         },
         maxTokens: 512,
-        temperature: 0.8,
-        topK: 40
+        temperature: 0,
+        topK: 1,
+        randomSeed: 1
       });
+      llmInferenceInstance = instance;
+      return instance;
     })();
   }
   return llmInferencePromise;
@@ -40,13 +30,23 @@ async function initModel() {
 
 async function runInference(prompt) {
   const llmInference = await initModel();
+  let result;
   if (typeof llmInference.generateResponse === "function") {
-    return await llmInference.generateResponse(prompt);
+    result = await llmInference.generateResponse(prompt);
+  } else if (typeof llmInference.generate === "function") {
+    result = await llmInference.generate(prompt);
+  } else {
+    throw new Error("No compatible generate method found on LlmInference.");
   }
-  if (typeof llmInference.generate === "function") {
-    return await llmInference.generate(prompt);
+  if (RESET_MODEL_EACH_REQUEST && llmInferenceInstance?.close) {
+    try {
+      llmInferenceInstance.close();
+    } finally {
+      llmInferencePromise = null;
+      llmInferenceInstance = null;
+    }
   }
-  throw new Error("No compatible generate method found on LlmInference.");
+  return result;
 }
 
 chrome.runtime.onMessage.addListener((message) => {
@@ -62,7 +62,10 @@ chrome.runtime.onMessage.addListener((message) => {
         target: "service_worker",
         type: "LLM_RESULT",
         requestId: message.requestId,
-        result: typeof result === "string" ? result : JSON.stringify(result)
+        result:
+          typeof result === "string"
+            ? normalizeOutput(result)
+            : normalizeOutput(JSON.stringify(result))
       });
     } catch (err) {
       chrome.runtime.sendMessage({
