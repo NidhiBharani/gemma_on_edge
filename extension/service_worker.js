@@ -10,6 +10,7 @@ async function ensureOffscreenDocument() {
     reasons: ["IFRAME_SCRIPTING"],
     justification: "Run MediaPipe WebGPU inference offscreen."
   });
+  console.info("[Gemma Redaction] Offscreen document created.");
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -23,6 +24,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       pendingRequests.delete(message.requestId);
       pending({ result: message.result, error: message.error });
     }
+    if (message.error) {
+      console.warn("[Gemma Redaction] Offscreen error:", message.error);
+    }
     return;
   }
 
@@ -32,6 +36,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     ensureOffscreenDocument()
       .then(() => {
+        console.info("[Gemma Redaction] Forwarding prompt:", requestId);
         chrome.runtime.sendMessage({
           target: "offscreen",
           type: "LLM_PROMPT",
@@ -41,6 +46,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       })
       .catch((err) => {
         pendingRequests.delete(requestId);
+        console.error("[Gemma Redaction] Failed to create offscreen doc:", err);
         sendResponse({ error: err?.message ?? String(err) });
       });
 

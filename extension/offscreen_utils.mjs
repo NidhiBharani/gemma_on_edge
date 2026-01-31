@@ -23,12 +23,19 @@ Placeholders:
 
 Rules:
 - Remove all digits of SSNs and government IDs. Replace the full identifier with [SSN] (keep the label if present).
+- Redact full names (first + last) entirely with [NAME]; do not leave surnames.
+- Redact full street addresses (unit/building, street, locality, city, postal code) with [ADDRESS].
+- Redact phone numbers (including country codes) with [PHONE].
+- Redact emails with [EMAIL].
+- Redact dates of birth (e.g., "DOB: 1992-08-14") with [DATE_OF_BIRTH].
 
 Examples:
 Input: Payroll setup for Sam — SSN: 123-45-6789 (dummy).
 Output: Payroll setup for [NAME] — SSN: [SSN] (dummy).
 Input: Tax ID 12-3456789 or SIN 123-456-789.
 Output: Tax ID [SSN] or SIN [SSN].
+Input: Hi, I'm Priya Nair. Please update my address to 14B, Lakeview Apartments, 3rd Cross, Indiranagar, Bengaluru 560038. You can reach me at +91 98765 43210 or priya.nair17@example.com. DOB: 1992-08-14.
+Output: Hi, I'm [NAME]. Please update my address to [ADDRESS]. You can reach me at [PHONE] or [EMAIL]. [DATE_OF_BIRTH].
 `;
 
 export function buildPrompt(text) {
